@@ -11,7 +11,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 var(--sans)}
 .wrap{max-width:860px;margin:auto;padding-block:24px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 h1{font-family:var(--serif);text-align:center;font-size:1.7rem;margin:.2em 0}
 h2{font-family:var(--serif);font-size:1.25rem;margin:0 0 .5em;color:var(--accent)}
-section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-top:18px}
+section{background:var(--tint,var(--card));border:1px solid var(--line);border-radius:10px;padding:20px;margin-top:18px}
 .note{background:var(--soft);padding:10px 14px;border-radius:6px;font-size:.95rem}
 .q{padding:14px 0;border-top:1px solid var(--line)}.q:first-of-type{border-top:0}
 .q>.t{font-weight:700;margin-bottom:6px}
@@ -24,7 +24,9 @@ textarea{width:100%;min-height:70px}
 .lk.head span:first-child{text-align:left}
 .lk label{display:flex;justify-content:center}
 .lk input{width:22px;height:22px;accent-color:var(--accent)}
-.missing{background:#fbe9e7}
+.missing{background:#fbe9e7!important}
+.lk.head{position:static;background:rgba(255,255,255,.55);border-radius:6px;margin-top:6px}
+section.c0{--tint:#fdeeee}section.c1{--tint:#fff1e6}section.c2{--tint:#fff9df}section.c3{--tint:#ecf8ec}section.c4{--tint:#eaf3fc}section.c5{--tint:#eeedfb}section.c6{--tint:#f5eefb}section.c7{--tint:#fdeef5}section.c8{--tint:#eef8f7}
 .btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:24px}
 button{font:inherit;font-weight:700;padding:10px 22px;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
 button.alt{background:transparent;color:var(--accent)}
@@ -32,10 +34,10 @@ button.alt{background:transparent;color:var(--accent)}
 .rank{display:flex;flex-wrap:wrap;gap:8px}
 @media (max-width:560px){.lk{grid-template-columns:repeat(6,1fr)}.lk>span:first-child{grid-column:1/-1}.lk.head span:first-child{display:none}}
 #report{display:none}
-#report{font:12px/1.6 var(--sans);color:#000;background:#fff;padding:20px;width:760px}
-#report h1{font-size:18px}#report h3{font-size:14px;margin:14px 0 4px;border-bottom:1px solid #000}
-#report table{width:100%;border-collapse:collapse}#report td{border:1px solid #999;padding:3px 6px;vertical-align:top}
-#report td.a{width:110px;text-align:center;font-weight:700}
+#report,.rep{font:12px/1.6 var(--sans);color:#000;background:#fff;padding:20px;width:760px}
+#report h1,.rep h1{font-size:18px}#report h3,.rep h3{font-size:14px;margin:14px 0 4px;border-bottom:1px solid #000}
+#report table,.rep table{width:100%;border-collapse:collapse}#report td,.rep td{border:1px solid #999;padding:3px 6px;vertical-align:top}
+#report td.a,.rep td.a{width:110px;text-align:center;font-weight:700}
 .pb{page-break-inside:avoid}
 @media print{body{background:#fff}.wrap{display:none}#report{display:block!important;width:auto}}
 </style></head><body>
@@ -84,11 +86,11 @@ L("p7","第七部分、人際關係想法量表","這份量表是想了解你在
 L("p8","第八部分、自我想法量表","這份量表是想了解你對自己的想法。"+note+"非常不符合，「6」代表非常符合。",FIT,["整體而言，我對自己感到滿意","有時候，我認為自己一無是處","我覺得我有許多優點","我做事可以做得和大多數人一樣好","我覺得我自己沒有什麼值得自豪的","有時候我覺得自己很沒用","我覺得我是一個有價值的人，至少與別人不相上下","真希望我能更欣賞自己一些","整體而言，我覺得自己是一個失敗者","我對自己抱持肯定的態度"])];
 const f=document.getElementById("f");let H="";
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-for(const p of PARTS){H+=`<section><h2>${p.name}</h2><p class="note">${p.note}</p>`;
+let ci=0;for(const p of PARTS){H+=`<section class="c${ci++%9}"><h2>${p.name}</h2><p class="note">${p.note}</p>`;
  for(const b of p.blocks){
   if(b.type==="likert"){H+=b.t?`<div class="t" style="font-weight:700">${b.t}</div>`:"";
    H+=`<div class="lk head"><span>題目</span>${b.labels.map(l=>`<span>${l}</span>`).join("")}</div>`;
-   b.items.forEach((it,i)=>{const n=`${b.id}_${i+1}`;H+=`<div class="lk" data-q="${n}"><span>${b.id.startsWith("b")?"("+(i+1)+")":(i+1)+"、"} ${esc(it)}</span>${[1,2,3,4,5,6].map(v=>`<label title="${b.labels[v-1]||v}"><input type="radio" name="${n}" value="${v}" aria-label="${v}"></label>`).join("")}</div>`});continue}
+   const hd=`<div class="lk head"><span>題目</span>${b.labels.map(l=>`<span>${l}</span>`).join("")}</div>`;b.items.forEach((it,i)=>{const n=`${b.id}_${i+1}`;if(i&&i%5===0)H+=hd;H+=`<div class="lk" data-q="${n}"><span>${b.id.startsWith("b")?"("+(i+1)+")":(i+1)+"、"} ${esc(it)}</span>${[1,2,3,4,5,6].map(v=>`<label title="${b.labels[v-1]||v}"><input type="radio" name="${n}" value="${v}" aria-label="${v}"></label>`).join("")}</div>`});continue}
   H+=`<div class="q" data-q="${b.id}" id="w_${b.id}"><div class="t">${b.t}</div>`;
   if(b.type==="radio"||b.type==="check"){H+=`<div class="opts">`+b.o.map((o,i)=>`<label><input type="${b.type==="radio"?"radio":"checkbox"}" name="${b.id}" value="${i+1}"> ${i+1}. ${o}</label>`).join("")+`</div>`}
   if(b.type==="rank"){H+=`<div class="opts" style="margin-bottom:8px;color:var(--mute)">${b.o.map((o,i)=>`${i+1}. ${o}`).join("　")}</div><div class="rank">`+Array.from({length:b.n},(_,k)=>`<label>第${k+1}名 <select name="${b.id}_${k+1}"><option value=""></option>${b.o.map((o,i)=>`<option value="${i+1}">${i+1}. ${o}</option>`).join("")}</select></label>`).join("")+`</div>`}
@@ -137,9 +139,9 @@ function buildReport(o){let h=`<h1>青少年學習與生活經驗量表　作答
    h+=`<tr class="pb"><td colspan="2"><b>${b.t}</b><br>${a}</td></tr>`}
   h+=`</table></div>`}
  const r=document.getElementById("report");r.innerHTML=h;return r}
-document.getElementById("pdf").onclick=async()=>{const o=validate();if(!o)return;const r=buildReport(o);r.style.display="block";
- try{await html2pdf().set({margin:10,filename:`量表_${o.編號}.pdf`,image:{type:"jpeg",quality:.95},html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4"},pagebreak:{mode:["css","legacy"],avoid:".pb"}}).from(r).save();msg("")}
- catch(e){msg("PDF 產生失敗，請改用「列印 / 另存 PDF」")}finally{r.style.display="none"}};
+document.getElementById("pdf").onclick=async()=>{const o=validate();if(!o)return;const r=buildReport(o);const y=scrollY;scrollTo(0,0);const el=document.createElement("div");el.className="rep";el.style.width="700px";el.style.padding="0";el.innerHTML=r.innerHTML;
+ try{await html2pdf().set({margin:10,filename:`量表_${o.編號}.pdf`,image:{type:"jpeg",quality:.95},html2canvas:{scale:2,scrollX:0,scrollY:0},jsPDF:{unit:"mm",format:"a4"},pagebreak:{mode:["css","legacy"],avoid:".pb"}}).from(el).save();msg("")}
+ catch(e){msg("PDF 產生失敗，請改用「列印 / 另存 PDF」")}finally{scrollTo(0,y)}};
 document.getElementById("prt").onclick=()=>{const o=validate();if(!o)return;buildReport(o);window.print()};
 document.getElementById("csv").onclick=()=>{const o=validate();if(!o)return;const k=Object.keys(o),q=v=>`"${String(v).replace(/"/g,'""')}"`;
  const blob=new Blob(["﻿"+k.map(q).join(",")+"\n"+k.map(x=>q(o[x])).join(",")],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`量表_${o.編號}.csv`;a.click()};
