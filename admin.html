@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>量表後台</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+:root{--bg:#f3f5f4;--card:#fff;--fg:#1d2a26;--mute:#5d6b66;--line:#d5ddd9;--accent:#1f6f5c;--err:#b3261e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 "Noto Sans TC","Microsoft JhengHei",sans-serif}
+.wrap{max-width:900px;margin:auto;padding:24px 16px 60px}
+h1{font-size:1.4rem;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-top:14px}
+input{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
+button{font:inherit;font-weight:700;padding:8px 16px;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer}
+button.alt{background:transparent;color:var(--accent)}button:disabled{opacity:.5}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{padding:8px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--mute);font-size:.85rem}
+#msg{color:var(--err);font-weight:700}.dup{color:var(--err);font-size:.8rem}
+</style></head><body>
+<div class="wrap">
+<h1>青少年學習與生活經驗量表・後台</h1>
+<div class="card bar"><input type="password" id="pw" placeholder="後台密碼"><button id="login">登入 / 重新整理</button><span id="msg"></span></div>
+<div class="card" id="panel" hidden>
+ <div class="bar"><b id="count"></b><input id="q" placeholder="搜尋編號"><button class="alt" id="zip">全部 PDF 打包下載 (ZIP)</button><button class="alt" id="csv">全部資料下載 (CSV)</button><span id="prog"></span></div>
+ <div class="tw"><table><thead><tr><th>#</th><th>編號</th><th>送出時間</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+</div>
+</div>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+let ROWS=[];const $=id=>document.getElementById(id);
+try{$("pw").value=sessionStorage.getItem("pw")||""}catch(e){}
+async function load(){$("msg").textContent="讀取中…";
+ try{const r=await fetch(SCRIPT_URL+"?key="+encodeURIComponent($("pw").value));const j=await r.json();
+  if(!j.ok){$("msg").textContent=j.error||"讀取失敗";return}
+  try{sessionStorage.setItem("pw",$("pw").value)}catch(e){}
+  ROWS=j.rows;$("msg").textContent="";$("panel").hidden=false;render()}
+ catch(e){$("msg").textContent="連線失敗，請確認 config.js 的網址"}}
+function render(){const q=$("q").value.trim(),cnt={};ROWS.forEach(r=>cnt[r.data.編號]=(cnt[r.data.編號]||0)+1);
+ $("count").textContent=`共 ${ROWS.length} 份`;
+ $("tb").innerHTML=ROWS.map((r,i)=>[r,i]).filter(([r])=>!q||String(r.data.編號).includes(q)).map(([r,i])=>
+ `<tr><td>${i+1}</td><td>${esc(String(r.data.編號))} ${cnt[r.data.編號]>1?'<span class="dup">（重複送出）</span>':""}</td><td>${esc(r.time)}</td><td><button class="alt" data-i="${i}">下載 PDF</button></td></tr>`).join("")}
+$("login").onclick=load;$("pw").onkeydown=e=>{if(e.key==="Enter")load()};$("q").oninput=render;
+$("tb").onclick=async e=>{const i=e.target.dataset.i;if(i==null)return;e.target.disabled=true;try{const r=ROWS[i];await makePdf(r.data,r.time)}finally{e.target.disabled=false}};
+$("csv").onclick=()=>csvDownload(ROWS.map(r=>({送出時間:r.time,...r.data})),"量表_全部.csv");
+$("zip").onclick=async()=>{const b=$("zip");b.disabled=true;const zip=new JSZip();
+ for(let i=0;i<ROWS.length;i++){$("prog").textContent=`產生中 ${i+1}/${ROWS.length}`;const r=ROWS[i];
+  const el=document.createElement("div");el.className="rep";el.style.width="700px";el.innerHTML=reportHTML(r.data,r.time);
+  const blob=await html2pdf().set({margin:10,image:{type:"jpeg",quality:.9},html2canvas:{scale:1.5,scrollX:0,scrollY:0},jsPDF:{unit:"mm",format:"a4"},pagebreak:{mode:["css","legacy"],avoid:".pb"}}).from(el).outputPdf("blob");
+  zip.file(`${String(r.data.編號).replace(/[\\/:*?"<>|]/g,"_")}_${i+1}.pdf`,blob)}
+ const z=await zip.generateAsync({type:"blob"});const a=document.createElement("a");a.href=URL.createObjectURL(z);a.download="量表_全部PDF.zip";a.click();$("prog").textContent="完成";b.disabled=false};
+</script></body></html>
